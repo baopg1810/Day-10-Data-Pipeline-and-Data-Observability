@@ -1,0 +1,88 @@
+version: "1.0"
+dataset: "kb_chunk_export"
+owner_team: "day10_lab_team"
+
+schema_cleaned:
+  chunk_id:
+    type: string
+    required: true
+    description: "Stable ID after clean, generated from doc_id + cleaned text + sequence."
+  doc_id:
+    type: string
+    required: true
+    description: "Canonical source document key."
+  chunk_text:
+    type: string
+    required: true
+    constraints:
+      min_length: 8
+      no_noisy_marker: true
+      no_forbidden_stale_policy: true
+  effective_date:
+    type: date
+    required: true
+    format: "YYYY-MM-DD"
+  exported_at:
+    type: datetime
+    required: true
+    format: "ISO-8601"
+
+quality_rules:
+  - id: "no_duplicate_chunk_text"
+    severity: "warn"
+  - id: "no_stale_refund_window"
+    description: "Refund v4 must not publish stale 14-day window; current window is 7 working days."
+    severity: "halt"
+  - id: "required_grading_doc_ids_present"
+    description: "All five grading source docs must be present after clean."
+    severity: "halt"
+  - id: "no_ambiguous_or_noisy_chunks"
+    description: "Do not publish chunks marked unclear/noisy."
+    severity: "halt"
+  - id: "effective_date_not_before_doc_floor"
+    description: "Each canonical doc must meet its minimum effective date."
+    severity: "halt"
+  - id: "sla_p1_no_other_priority_chunks"
+    description: "The sla_p1_2026 collection scope must not publish Ticket P2/P3/P4 chunks."
+    severity: "halt"
+
+freshness:
+  measured_at: "publish"
+  sla_hours: 24
+  alert_channel: "#data-observability"
+
+canonical_sources:
+  - path: "data/docs/policy_refund_v4.txt"
+    doc_id: "policy_refund_v4"
+    owner: "CS"
+    min_effective_date: "2026-02-01"
+  - path: "data/docs/sla_p1_2026.txt"
+    doc_id: "sla_p1_2026"
+    owner: "IT Support"
+    min_effective_date: "2026-01-15"
+  - path: "data/docs/it_helpdesk_faq.txt"
+    doc_id: "it_helpdesk_faq"
+    owner: "IT Helpdesk"
+    min_effective_date: "2026-01-20"
+  - path: "data/docs/hr_leave_policy.txt"
+    doc_id: "hr_leave_policy"
+    owner: "HR"
+    min_effective_date: "2026-01-01"
+  - path: "data/docs/access_control_sop.txt"
+    doc_id: "access_control_sop"
+    owner: "IT Security"
+    min_effective_date: "2026-01-01"
+
+allowed_doc_ids:
+  - policy_refund_v4
+  - sla_p1_2026
+  - it_helpdesk_faq
+  - hr_leave_policy
+  - access_control_sop
+
+policy_versioning:
+  policy_refund_min_effective_date: "2026-02-01"
+  sla_p1_min_effective_date: "2026-01-15"
+  it_helpdesk_faq_min_effective_date: "2026-01-20"
+  hr_leave_min_effective_date: "2026-01-01"
+  access_control_min_effective_date: "2026-01-01"
